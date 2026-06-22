@@ -15,6 +15,18 @@ python -m spacy download fr_core_news_sm
 python -m spacy download ru_core_news_sm
 ```
 
+<!-- Comandos para baixar os datasets -->
+<!-- pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0-py3-none-any.whl -->
+
+<!-- pip install https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.7.0/de_core_news_sm-3.7.0-py3-none-any.whl -->
+
+<!-- pip install https://github.com/explosion/spacy-models/releases/download/fr_core_news_sm-3.7.0/fr_core_news_sm-3.7.0-py3-none-any.whl -->
+
+<!-- pip install https://github.com/explosion/spacy-models/releases/download/ru_core_news_sm-3.7.0/ru_core_news_sm-3.7.0-py3-none-any.whl -->
+
+<!-- Teste para verificar se os datasets baixaram -->
+<!-- python -c "import spacy; [spacy.load(m) for m in ['en_core_web_sm', 'de_core_news_sm', 'fr_core_news_sm', 'ru_core_news_sm']]; print('Todos os 4 modelos foram carregados com sucesso')"
+ -->
 ## Machine Translation (MT)
 
 ```bash
