@@ -370,14 +370,14 @@ def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", la
 
 if __name__ == "__main__":
     device = "cuda"
-    selections = ["rand1+rand1", "rand2+rand2", "rand3+rand3", "bm25+bm25", "polynomial+polynomial", "bm25+polynomial", "polynomial+bm25"]
+    selections = ["rand1+rand1", "bm25+polynomial", "polynomial+bm25"]
     order = "ascending"
     langs = ["de", "fr", "ru"]
-    directions = ["into", "outof"]
+    directions = ["into"]
     model_path = "facebook/xglm-7.5B"
     output_dir = "../output"
     shot = 4
     batch_size = 2
-    templates = ["vanilla", "ensemble_word_syntax", "ensemble_syntax_word", "diff_ensemble_word_syntax", "ensemble_word_semantics", "ensemble_random_random", "single_random", "single_example", "vanilla_testinst"]
+    templates = ["vanilla", "ensemble_word_syntax", "ensemble_random_random"]
     cut = -1
     main(device, selections, order, langs, directions, model_path, output_dir, shot, batch_size, templates, cut)

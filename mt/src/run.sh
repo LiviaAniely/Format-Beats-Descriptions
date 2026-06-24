@@ -11,3 +11,6 @@ python eval.py
 
 # Attention (XGLM)
 python attention_xglm.py
+
+# Attention (Alpaca)
+python attention_alpaca.py

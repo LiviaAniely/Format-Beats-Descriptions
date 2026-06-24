@@ -664,7 +664,7 @@ if __name__ == "__main__":
     selections = ["bm25+polynomial"]
     order = "ascending"
     langs = ["de", "fr", "ru"]
-    directions = ["into", "outof"]
+    directions = ["into"]
     model_path = "facebook/xglm-7.5B"
     shot = 4
     templates = ["ensemble_word_syntax", "ensemble_random_random"]

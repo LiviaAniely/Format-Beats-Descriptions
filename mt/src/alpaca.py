@@ -419,13 +419,13 @@ def main(selections=["bm25"], order="descending", langs=["de", "fr", "ru"], dire
 
 
 if __name__ == "__main__":
-    selections = ["rand1+rand1", "rand2+rand2", "rand3+rand3", "bm25+bm25", "polynomial+polynomial", "bm25+polynomial", "polynomial+bm25"]
+    selections = ["rand1+rand1", "bm25+polynomial", "polynomial+bm25"]
     order = "ascending"
     langs = ["de", "fr", "ru"]
-    directions = ["into", "outof"]
+    directions = ["into"]
     output_dir = "../output/alpaca"
     shot = 4
     batch_size = 8
-    templates = ["alpaca_ensemble", "ensemble_word_syntax", "ensemble_syntax_word", "ensemble_word_syntax_different", "ensemble_word_semantics", "ensemble_random_random", "single_random", "single_example", "alpaca_ensemble_testinst"]
+    templates = ["alpaca_ensemble", "ensemble_word_syntax", "ensemble_random_random"]
     cut = -1
     main(selections, order, langs, directions, output_dir, shot, batch_size, templates, cut)

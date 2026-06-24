@@ -886,7 +886,7 @@ if __name__ == "__main__":
     selections = ["bm25+polynomial"]
     order = "ascending"
     langs = ["de", "fr", "ru"]
-    directions = ["into", "outof"]
+    directions = ["into"]
     shot = 4
     batch_size = 8
     templates = ["ensemble_word_syntax", "ensemble_random_random"]

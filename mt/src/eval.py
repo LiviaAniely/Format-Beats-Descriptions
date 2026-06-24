@@ -59,18 +59,18 @@ def main(model="alpaca", device="cuda", selections=["bm25-polynomial"], order="d
 
 if __name__ == "__main__":
     device = "cuda"
-    selections = ["rand1+rand1", "rand2+rand2", "rand3+rand3", "bm25+bm25", "polynomial+polynomial", "bm25+polynomial", "polynomial+bm25"]
+    selections = ["rand1+rand1", "bm25+polynomial", "polynomial+bm25"]
     order = "ascending"
     langs = ["de", "fr", "ru"]
-    directions = ["into", "outof"]
+    directions = ["into"]
     shot = 4
 
     model = "xglm"
-    templates = ["vanilla", "ensemble_word_syntax", "ensemble_syntax_word", "ensemble_word_syntax_different", "ensemble_word_semantics", "ensemble_random_random"]
+    templates = ["vanilla", "ensemble_word_syntax", "ensemble_random_random"]
     log_path = f"../result/{model}/result.tsv"
     main(model, device, selections, order, langs, directions, shot, templates, log_path)
 
     model = "alpaca"
-    templates = ["alpaca_ensemble", "ensemble_word_syntax", "ensemble_syntax_word", "ensemble_word_syntax_different", "ensemble_word_semantics", "ensemble_random_random"]
+    templates = ["alpaca_ensemble", "ensemble_word_syntax", "ensemble_random_random"]
     log_path = f"../result/{model}/result.tsv"
     main(model, device, selections, order, langs, directions, shot, templates, log_path)
