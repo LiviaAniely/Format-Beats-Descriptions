@@ -868,6 +868,8 @@ def main(selections=["bm25"], order="descending", langs=["de", "fr", "ru"], dire
             #         print(f"{key}: {10000*results_sum_overall[key]:.2f}")
             print("=====================================")
 
+            import os
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with open(output_path, "a") as f:
                 for results_sum_overall in results_sum_overalls:
                     f.write(f"{selection}\t{shot}\t{order}\t{template}\t")

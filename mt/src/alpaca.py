@@ -371,6 +371,8 @@ def main(selections=["bm25"], order="descending", langs=["de", "fr", "ru"], dire
                             train_sentence_pairs.append((src.strip(), tgt.strip()))
 
                     output_fn = f"{output_dir}/{lang}.{direction}.{selection}.{shot}.{order}.{template}.txt"
+                    import os
+                    os.makedirs(os.path.dirname(output_fn), exist_ok=True)
 
                     with open(output_fn, "w") as f:
                         prompts = []

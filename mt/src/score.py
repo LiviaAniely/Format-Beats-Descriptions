@@ -1,12 +1,22 @@
 import os
 import numpy as np
-from comet import load_from_checkpoint
+from comet import download_model, load_from_checkpoint
 from sacrebleu import corpus_bleu
 
 
 def init_comet_20(model_path="Unbabel/wmt20-comet-da"):
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"    
-    comet_metric = load_from_checkpoint(model_path)
+    model_dir = download_model(model_path)
+    if os.path.isdir(model_dir):
+        ckpt_path = os.path.join(model_dir, "checkpoints", "model.ckpt")
+        if not os.path.exists(ckpt_path):
+            import glob
+            ckpt_files = glob.glob(os.path.join(model_dir, "**/*.ckpt"), recursive=True)
+            if ckpt_files:
+                ckpt_path = ckpt_files[0]
+    else:
+        ckpt_path = model_dir
+    comet_metric = load_from_checkpoint(ckpt_path)
     return comet_metric
 
 

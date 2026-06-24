@@ -496,7 +496,7 @@ def do_order(list, order):
 def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", langs=["de", "fr", "ru"], directions=["into", "outof"], model_path="facebook/xglm-7.5B", shot=4, templates=["a"], cut=100, output_path="../result/xglm/attention.tsv"):
     torch.device(device)
     tokenizer = XGLMTokenizer.from_pretrained(model_path, padding_side="left")
-    model = XGLMForCausalLM.from_pretrained(model_path).to(device)
+    model = XGLMForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16).to(device)
 
     for template in templates:
         for selection in selections:
@@ -566,10 +566,14 @@ def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", la
                     results_sums = []
                     for prompt in tqdm(prompts, ncols=60):
                         input_ids = tokenizer(prompt, return_tensors="pt", padding=True).input_ids.to(device)
-                        attention_matrix = model(input_ids, output_attentions=True).attentions
-                        input_ids = input_ids[0].cpu().detach()
+                        with torch.no_grad():
+                            attentions = model(input_ids, output_attentions=True).attentions
+                            # Move attention tensors to CPU immediately to free GPU memory
+                            attention_matrix = [layer_attn[0].cpu() for layer_attn in attentions]
+                            del attentions
+                        input_ids = input_ids[0].cpu()
                         for layer in range(len(attention_matrix)):
-                            layer_attention_matrix = attention_matrix[layer][0].cpu().detach()
+                            layer_attention_matrix = attention_matrix[layer]
                             if len(results_sums) <= layer:
                                 results_sum = {}
                                 results_sums.append(results_sum)
@@ -640,6 +644,8 @@ def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", la
             #         print(f"{key}: {10000*results_sum_overalls[0][key]:.2f}")
             print("=====================================")
 
+            import os
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with open(output_path, "a") as f:
                 for results_sum_overall in results_sum_overalls:
                     f.write(f"{selection}\t{shot}\t{order}\t{template}\t")

@@ -50,6 +50,8 @@ def main(model="alpaca", device="cuda", selections=["bm25-polynomial"], order="d
                     print(f"BLEU: {bleu_score}")
                     print("=====================================")
 
+                    import os
+                    os.makedirs(os.path.dirname(log_path), exist_ok=True)
                     with open(log_path, 'a') as f_log:
                         f_log.write(f"{template}\t{shot}\t{lang}\t{direction}\t{selection}\t{order}\t{100 * comet_20_score}\t{bleu_score}\n")
                     f_log.close()

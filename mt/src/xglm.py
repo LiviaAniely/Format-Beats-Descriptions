@@ -276,7 +276,7 @@ def do_order(list, order):
 def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", langs=["de", "fr", "ru"], directions=["into", "outof"], model_path="facebook/xglm-7.5B", output_dir="../output", shot=4, batch_size=8, templates=["a"], cut=100):
     torch.device(device)
     tokenizer = XGLMTokenizer.from_pretrained(model_path, padding_side="left")
-    model = XGLMForCausalLM.from_pretrained(model_path).to(device)
+    model = XGLMForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16).to(device)
     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, return_full_text=False, device=device)
 
     for template in templates:
@@ -328,6 +328,8 @@ def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", la
                             train_sentence_pairs.append((src.strip(), tgt.strip()))
 
                     output_fn = f"{output_dir}/xglm/{lang}.{direction}.{selection}.{shot}.{order}.{template}.txt"
+                    import os
+                    os.makedirs(os.path.dirname(output_fn), exist_ok=True)
 
                     system = []
                     with open(output_fn, "w") as f:
