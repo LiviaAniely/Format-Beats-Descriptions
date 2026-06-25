@@ -888,7 +888,7 @@ if __name__ == "__main__":
     langs = ["de", "fr", "ru"]
     directions = ["into"]
     shot = 4
-    batch_size = 8
+    batch_size = 1
     templates = ["ensemble_word_syntax", "ensemble_random_random"]
     cut = -1
     main(selections, order, langs, directions, shot, batch_size, templates, cut)
