@@ -123,6 +123,8 @@ class ReasoningData:
             if pred == gold:
                 correct += 1
         
+        if not preds:
+            return 0.0
         return correct / len(preds)
     
 
@@ -443,6 +445,8 @@ class GSM8KData(ReasoningData):
             if pred == gold:
                 correct += 1
         
+        if not preds:
+            return 0.0
         return correct / len(preds)
     
 

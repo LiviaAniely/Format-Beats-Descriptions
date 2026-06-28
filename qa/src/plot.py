@@ -1,6 +1,9 @@
+import os
 from collections import defaultdict
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -55,7 +58,11 @@ def plot_cross_models(results, save_path=None, title="Model Comparisons", sort_o
     add_labels(bars)
 
     plt.tight_layout()
-    plt.savefig(save_path) if save_path else plt.show()
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path)
+    else:
+        plt.show()
 
 def plot_cross_datasets(results, model, category, save_path, sort_order):
     """
@@ -108,4 +115,8 @@ def plot_cross_datasets(results, model, category, save_path, sort_order):
     add_labels(bars)
 
     plt.tight_layout()
-    plt.savefig(save_path) if save_path else plt.show()
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path)
+    else:
+        plt.show()

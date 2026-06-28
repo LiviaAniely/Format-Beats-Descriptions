@@ -27,8 +27,13 @@ def evaluate_cross_models(dataset_name, output_dir, models=["alpaca-7b", "llama-
 
     for model_name in models:
         model_output_dir = f"{output_dir}/{model_name}"
-        output_files = os.listdir(model_output_dir)
-        output_files = [f"{model_output_dir}/{file}" for file in output_files if file.startswith("4") and "ensemble_random" in file or "vanilla" in file]
+        if not os.path.exists(model_output_dir):
+            continue
+        try:
+            output_files = os.listdir(model_output_dir)
+        except OSError:
+            continue
+        output_files = [f"{model_output_dir}/{file}" for file in output_files if file.startswith("4") and ("ensemble_random" in file or "vanilla" in file)]
 
         for file in output_files:
             # print(f'evaluating {file}')
@@ -45,13 +50,16 @@ def evaluate_cross_models(dataset_name, output_dir, models=["alpaca-7b", "llama-
 
 def evaluate_cross_datasets(model, category):
     category_dir = f"../output/{category}"
+    if not os.path.exists(category_dir):
+        return {}, category_dir.replace("output", "images")
     datasets = os.listdir(category_dir)
     output_dirs = [f"{category_dir}/{dataset}/" for dataset in datasets]
 
     results = defaultdict(dict)
     for dataset, output_dir in zip(datasets, output_dirs):
         tmp, _ = evaluate_cross_models(dataset, output_dir, model)
-        results[dataset] = tmp[model]
+        if model in tmp:
+            results[dataset] = tmp[model]
 
     return results, category_dir.replace("output", "images")
 
@@ -76,21 +84,29 @@ if __name__ == "__main__":
         "hallucination": ["knownunknowns"]
     }
 
-
     # Small models
     small_model_results = {}
     for dataset in datasets:
+        dataset_obj = get_dataset(dataset)
+        output_dir = dataset_obj.data_dir.replace("data", "output")
+        if not os.path.exists(output_dir):
+            continue
         results, save_dir = evaluate_cross_models(dataset, None, models=models)
-        small_model_results[dataset] = results
-        # plot_cross_models(results, dataset, save_path=f"{save_dir}/{dataset}.png", sort_order=sort_order)
-    to_excel(small_model_results, "small_models.xlsx", sort_order)
+        if results:
+            small_model_results[dataset] = results
+            plot_cross_models(results, save_path=f"{save_dir}/{dataset}.png", title=dataset, sort_order=sort_order)
+    if small_model_results:
+        to_excel(small_model_results, "small_models.xlsx", sort_order)
 
     # GPT-3.5
     model = "gpt-3.5-turbo-0125"
 
-    gpt_results = {}
-    for category, datasets in task2datasets.items():
-        results, save_dir = evaluate_cross_datasets(model, category)
-        gpt_results[category] = results
-        plot_cross_datasets(results, model, category, save_path=f"{save_dir}/{model}.png", sort_order=sort_order)
-    to_excel(gpt_results, "gpt.xlsx", sort_order)
+    if os.path.exists(f"../output/{model}") or any(os.path.exists(f"../output/{cat}") for cat in task2datasets.keys()):
+        gpt_results = {}
+        for category, datasets in task2datasets.items():
+            results, save_dir = evaluate_cross_datasets(model, category)
+            if results:
+                gpt_results[category] = results
+                plot_cross_datasets(results, model, category, save_path=f"{save_dir}/{model}.png", sort_order=sort_order)
+        if gpt_results:
+            to_excel(gpt_results, "gpt.xlsx", sort_order)
