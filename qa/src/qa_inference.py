@@ -35,6 +35,24 @@ def main(
     if isinstance(templates, str):
         templates = [templates]
 
+    dataset: ReasoningData = get_dataset(dataset_name, **kwargs)
+    output_dir = dataset.data_dir.replace("data", "output")
+    model_name = model_name_or_path.split("/")[-1]
+    output_dir = f"{output_dir}/{model_name}"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    all_exist = True
+    for template in templates:
+        output_fn = f"{output_dir}/{shot}.{template}.txt" if not is_cot \
+        else f"{output_dir}/{shot}.{template}.cot.txt"
+        if not (os.path.exists(output_fn) and os.path.getsize(output_fn) > 0):
+            all_exist = False
+            break
+    if all_exist:
+        print(f"All outputs for {model_name} on {dataset_name} (shot {shot}, CoT {is_cot}) already exist. Skipping model loading and generation.")
+        return
+
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, torch_dtype=torch.float16).cuda().eval()
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=False)
     tokenizer.padding_side = "left"
@@ -49,20 +67,15 @@ def main(
                     pad_token=tokenizer.pad_token_id,
                 )
                 
-    dataset: ReasoningData = get_dataset(dataset_name, **kwargs)
-    output_dir = dataset.data_dir.replace("data", "output")
-
     examples, (test_inputs, gold_answers) = dataset.load_data(is_cot=is_cot, shot=shot)
-
-    model_name = model_name_or_path.split("/")[-1]
-
-    output_dir = f"{output_dir}/{model_name}"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
 
     for template in templates:
         output_fn = f"{output_dir}/{shot}.{template}.txt" if not is_cot \
         else f"{output_dir}/{shot}.{template}.cot.txt"
+
+        if os.path.exists(output_fn) and os.path.getsize(output_fn) > 0:
+            print(f"Output file {output_fn} already exists. Skipping this template.")
+            continue
 
         if "single" in template:
             num_nouns = 1
