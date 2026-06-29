@@ -13,7 +13,7 @@ dataset_map = {
     "known_unknowns": "knownunknowns",
 }
 
-def evaluate_cross_models(dataset_name, output_dir, models=["alpaca-7b", "llama-2-7b-chat", "Mistral-7B-Instruct-v0.2"]):
+def evaluate_cross_models(dataset_name, output_dir, models=["alpaca-7b", "Llama-2-7b-chat-hf", "Mistral-7B-Instruct-v0.2"]):
     if isinstance(models, str):
         models = [models]
 
