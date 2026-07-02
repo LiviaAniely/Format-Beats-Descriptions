@@ -1,7 +1,51 @@
 import torch
+import os
 
 from score import init_comet_20, get_comet_20_mean_score, get_bleu_mean_score
 
+def get_run_suffix(is_inference=False):
+    suffix = os.environ.get("RUN_SUFFIX")
+    if suffix is not None:
+        return suffix
+    
+    suffix_file = "../output/current_run_suffix.txt"
+    if os.path.exists(suffix_file):
+        try:
+            with open(suffix_file, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+            
+    if is_inference:
+        os.makedirs("../output", exist_ok=True)
+        i = 1
+        while True:
+            if not (os.path.exists(f"../output/xglm-{i}") or 
+                    os.path.exists(f"../output/alpaca-{i}") or 
+                    os.path.exists(f"../result/xglm-{i}") or 
+                    os.path.exists(f"../result/alpaca-{i}")):
+                suffix = f"-{i}"
+                break
+            i += 1
+        try:
+            with open(suffix_file, "w") as f:
+                f.write(suffix)
+        except Exception:
+            pass
+        return suffix
+        
+    i = 1
+    latest_suffix = ""
+    while True:
+        if (os.path.exists(f"../output/xglm-{i}") or 
+            os.path.exists(f"../output/alpaca-{i}") or 
+            os.path.exists(f"../result/xglm-{i}") or 
+            os.path.exists(f"../result/alpaca-{i}")):
+            latest_suffix = f"-{i}"
+            i += 1
+        else:
+            break
+    return latest_suffix
 
 def main(model="alpaca", device="cuda", selections=["bm25-polynomial"], order="descending", langs=["de", "fr", "ru"], directions=["into", "outof"], shot=4, templates=["alpaca"], log_path="../result/alpaca/result.tsv"):
     torch.device(device)
@@ -27,7 +71,8 @@ def main(model="alpaca", device="cuda", selections=["bm25-polynomial"], order="d
                         for line in f:
                             gold.append(line.strip())
                     
-                    output_fn = f"../output/{model}/{lang}.{direction}.{selection}.{shot}.{order}.{template}.txt"
+                    suffix = get_run_suffix(is_inference=False)
+                    output_fn = f"../output/{model}{suffix}/{lang}.{direction}.{selection}.{shot}.{order}.{template}.txt"
 
                     system = []
                     with open(output_fn, "r") as f:
@@ -50,7 +95,6 @@ def main(model="alpaca", device="cuda", selections=["bm25-polynomial"], order="d
                     print(f"BLEU: {bleu_score}")
                     print("=====================================")
 
-                    import os
                     os.makedirs(os.path.dirname(log_path), exist_ok=True)
                     with open(log_path, 'a') as f_log:
                         f_log.write(f"{template}\t{shot}\t{lang}\t{direction}\t{selection}\t{order}\t{100 * comet_20_score}\t{bleu_score}\n")
@@ -64,13 +108,13 @@ if __name__ == "__main__":
     langs = ["de", "fr", "ru"]
     directions = ["into"]
     shot = 4
-
+    suffix = get_run_suffix(is_inference=False)
     model = "xglm"
     templates = ["vanilla", "ensemble_word_syntax", "ensemble_random_random"]
-    log_path = f"../result/{model}/result.tsv"
+    log_path = f"../result/{model}{suffix}/result.tsv"
     main(model, device, selections, order, langs, directions, shot, templates, log_path)
 
     model = "alpaca"
     templates = ["alpaca_ensemble", "ensemble_word_syntax", "ensemble_random_random"]
-    log_path = f"../result/{model}/result.tsv"
+    log_path = f"../result/{model}{suffix}/result.tsv"
     main(model, device, selections, order, langs, directions, shot, templates, log_path)

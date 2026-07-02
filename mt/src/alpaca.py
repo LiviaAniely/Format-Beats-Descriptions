@@ -1,18 +1,60 @@
 import random
 import torch
+import os 
 
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig
 
+def get_run_suffix(is_inference=False):
+    suffix = os.environ.get("RUN_SUFFIX")
+    if suffix is not None:
+        return suffix
+    
+    suffix_file = "../output/current_run_suffix.txt"
+    if os.path.exists(suffix_file):
+        try:
+            with open(suffix_file, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+            
+    if is_inference:
+        os.makedirs("../output", exist_ok=True)
+        i = 1
+        while True:
+            if not (os.path.exists(f"../output/xglm-{i}") or 
+                    os.path.exists(f"../output/alpaca-{i}") or 
+                    os.path.exists(f"../result/xglm-{i}") or 
+                    os.path.exists(f"../result/alpaca-{i}")):
+                suffix = f"-{i}"
+                break
+            i += 1
+        try:
+            with open(suffix_file, "w") as f:
+                f.write(suffix)
+        except Exception:
+            pass
+        return suffix
+        
+    i = 1
+    latest_suffix = ""
+    while True:
+        if (os.path.exists(f"../output/xglm-{i}") or 
+            os.path.exists(f"../output/alpaca-{i}") or 
+            os.path.exists(f"../result/xglm-{i}") or 
+            os.path.exists(f"../result/alpaca-{i}")):
+            latest_suffix = f"-{i}"
+            i += 1
+        else:
+            break
+    return latest_suffix
 
 def lang_map(lang):
     lang_dict = {'en': 'English', 'de': 'German', 'fr': 'French', 'ru': 'Russian'}
     return lang_dict[lang]
 
-
 noun_list = []
 noun_cnt = 0
-
 
 def init_noun():
     global noun_list, noun_cnt
@@ -370,8 +412,12 @@ def main(selections=["bm25"], order="descending", langs=["de", "fr", "ru"], dire
                         for src, tgt in zip(f1, f2):
                             train_sentence_pairs.append((src.strip(), tgt.strip()))
 
-                    output_fn = f"{output_dir}/{lang}.{direction}.{selection}.{shot}.{order}.{template}.txt"
-                    import os
+                    suffix = get_run_suffix(is_inference=True)
+                    if output_dir.endswith("alpaca"):
+                        curr_output_dir = output_dir + suffix
+                    else:
+                        curr_output_dir = os.path.join(output_dir, f"alpaca{suffix}")
+                    output_fn = f"{curr_output_dir}/{lang}.{direction}.{selection}.{shot}.{order}.{template}.txt"
                     os.makedirs(os.path.dirname(output_fn), exist_ok=True)
 
                     with open(output_fn, "w") as f:

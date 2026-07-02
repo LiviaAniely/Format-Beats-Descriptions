@@ -1,5 +1,7 @@
 export CUDA_VISIBLE_DEVICES=0
 
+rm -f ../output/current_run_suffix.txt
+
 # Inference (XGLM)
 python xglm.py
 

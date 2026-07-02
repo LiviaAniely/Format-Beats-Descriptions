@@ -1,15 +1,58 @@
 import math
 import random
 import torch
+import os
 
 from tqdm import tqdm
 from transformers import XGLMTokenizer, XGLMForCausalLM
 from torch.utils.data import Dataset
 
-
 noun_list = []
 noun_cnt = 0
 
+def get_run_suffix(is_inference=False):
+    suffix = os.environ.get("RUN_SUFFIX")
+    if suffix is not None:
+        return suffix
+    
+    suffix_file = "../output/current_run_suffix.txt"
+    if os.path.exists(suffix_file):
+        try:
+            with open(suffix_file, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+            
+    if is_inference:
+        os.makedirs("../output", exist_ok=True)
+        i = 1
+        while True:
+            if not (os.path.exists(f"../output/xglm-{i}") or 
+                    os.path.exists(f"../output/alpaca-{i}") or 
+                    os.path.exists(f"../result/xglm-{i}") or 
+                    os.path.exists(f"../result/alpaca-{i}")):
+                suffix = f"-{i}"
+                break
+            i += 1
+        try:
+            with open(suffix_file, "w") as f:
+                f.write(suffix)
+        except Exception:
+            pass
+        return suffix
+        
+    i = 1
+    latest_suffix = ""
+    while True:
+        if (os.path.exists(f"../output/xglm-{i}") or 
+            os.path.exists(f"../output/alpaca-{i}") or 
+            os.path.exists(f"../result/xglm-{i}") or 
+            os.path.exists(f"../result/alpaca-{i}")):
+            latest_suffix = f"-{i}"
+            i += 1
+        else:
+            break
+    return latest_suffix
 
 def init_noun():
     global noun_list, noun_cnt
@@ -494,6 +537,12 @@ def do_order(list, order):
 
 
 def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", langs=["de", "fr", "ru"], directions=["into", "outof"], model_path="facebook/xglm-7.5B", shot=4, templates=["a"], cut=100, output_path="../result/xglm/attention.tsv"):
+    suffix = get_run_suffix(is_inference=False)
+    if output_path == "../result/xglm/attention.tsv":
+        output_path = f"../result/xglm{suffix}/attention.tsv"
+    elif "xglm/" in output_path:
+        output_path = output_path.replace("xglm/", f"xglm{suffix}/")
+
     torch.device(device)
     tokenizer = XGLMTokenizer.from_pretrained(model_path, padding_side="left")
     model = XGLMForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16).to(device)
@@ -644,7 +693,6 @@ def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", la
             #         print(f"{key}: {10000*results_sum_overalls[0][key]:.2f}")
             print("=====================================")
 
-            import os
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with open(output_path, "a") as f:
                 for results_sum_overall in results_sum_overalls:

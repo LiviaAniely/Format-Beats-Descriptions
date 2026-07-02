@@ -1,14 +1,57 @@
 import random
 import torch
+import os
 
 from tqdm import tqdm
 from transformers import XGLMTokenizer, XGLMForCausalLM, pipeline
 from torch.utils.data import Dataset
 
-
 noun_list = []
 noun_cnt = 0
 
+def get_run_suffix(is_inference=False):
+    suffix = os.environ.get("RUN_SUFFIX")
+    if suffix is not None:
+        return suffix
+    
+    suffix_file = "../output/current_run_suffix.txt"
+    if os.path.exists(suffix_file):
+        try:
+            with open(suffix_file, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+            
+    if is_inference:
+        os.makedirs("../output", exist_ok=True)
+        i = 1
+        while True:
+            if not (os.path.exists(f"../output/xglm-{i}") or 
+                    os.path.exists(f"../output/alpaca-{i}") or 
+                    os.path.exists(f"../result/xglm-{i}") or 
+                    os.path.exists(f"../result/alpaca-{i}")):
+                suffix = f"-{i}"
+                break
+            i += 1
+        try:
+            with open(suffix_file, "w") as f:
+                f.write(suffix)
+        except Exception:
+            pass
+        return suffix
+        
+    i = 1
+    latest_suffix = ""
+    while True:
+        if (os.path.exists(f"../output/xglm-{i}") or 
+            os.path.exists(f"../output/alpaca-{i}") or 
+            os.path.exists(f"../result/xglm-{i}") or 
+            os.path.exists(f"../result/alpaca-{i}")):
+            latest_suffix = f"-{i}"
+            i += 1
+        else:
+            break
+    return latest_suffix
 
 def init_noun():
     global noun_list, noun_cnt
@@ -327,8 +370,8 @@ def main(device="cuda:0", selections=["bm25-polynomial"], order="descending", la
                         for src, tgt in zip(f1, f2):
                             train_sentence_pairs.append((src.strip(), tgt.strip()))
 
-                    output_fn = f"{output_dir}/xglm/{lang}.{direction}.{selection}.{shot}.{order}.{template}.txt"
-                    import os
+                    suffix = get_run_suffix(is_inference=True)
+                    output_fn = f"{output_dir}/xglm{suffix}/{lang}.{direction}.{selection}.{shot}.{order}.{template}.txt"
                     os.makedirs(os.path.dirname(output_fn), exist_ok=True)
 
                     system = []

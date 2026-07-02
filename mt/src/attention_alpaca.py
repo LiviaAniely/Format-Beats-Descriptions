@@ -1,9 +1,53 @@
 import random
 import torch
+import os
 
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+def get_run_suffix(is_inference=False):
+    suffix = os.environ.get("RUN_SUFFIX")
+    if suffix is not None:
+        return suffix
+    
+    suffix_file = "../output/current_run_suffix.txt"
+    if os.path.exists(suffix_file):
+        try:
+            with open(suffix_file, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+            
+    if is_inference:
+        os.makedirs("../output", exist_ok=True)
+        i = 1
+        while True:
+            if not (os.path.exists(f"../output/xglm-{i}") or 
+                    os.path.exists(f"../output/alpaca-{i}") or 
+                    os.path.exists(f"../result/xglm-{i}") or 
+                    os.path.exists(f"../result/alpaca-{i}")):
+                suffix = f"-{i}"
+                break
+            i += 1
+        try:
+            with open(suffix_file, "w") as f:
+                f.write(suffix)
+        except Exception:
+            pass
+        return suffix
+        
+    i = 1
+    latest_suffix = ""
+    while True:
+        if (os.path.exists(f"../output/xglm-{i}") or 
+            os.path.exists(f"../output/alpaca-{i}") or 
+            os.path.exists(f"../result/xglm-{i}") or 
+            os.path.exists(f"../result/alpaca-{i}")):
+            latest_suffix = f"-{i}"
+            i += 1
+        else:
+            break
+    return latest_suffix
 
 def lang_map(lang):
     lang_dict = {'en': 'English', 'de': 'German', 'fr': 'French', 'ru': 'Russian'}
@@ -712,6 +756,12 @@ def do_order(list, order):
 
 
 def main(selections=["bm25"], order="descending", langs=["de", "fr", "ru"], directions=["into", "outof"], shot=4, batch_size=4, templates=["a"], cut=-1, output_path="../result/alpaca/attention.tsv"):
+    suffix = get_run_suffix(is_inference=False)
+    if output_path == "../result/alpaca/attention.tsv":
+        output_path = f"../result/alpaca{suffix}/attention.tsv"
+    elif "alpaca/" in output_path:
+        output_path = output_path.replace("alpaca/", f"alpaca{suffix}/")
+
     model_name_or_path = 'wxjiao/alpaca-7b'
     model = AutoModelForCausalLM.from_pretrained(model_name_or_path, torch_dtype=torch.float16, device_map="auto")
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=False)
