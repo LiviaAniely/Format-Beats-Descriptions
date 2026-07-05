@@ -1,3 +1,5 @@
+rm -f ../output/current_run_suffix.txt
+
 python qa_inference.py \
     --device 0 \
     --dataset csqa strategyqa date sports logicalfallacy threeobjects knownunknowns gsm8k aqua \

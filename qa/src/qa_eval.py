@@ -13,6 +13,63 @@ dataset_map = {
     "known_unknowns": "knownunknowns",
 }
 
+def get_run_suffix(is_inference=False):
+    suffix = os.environ.get("RUN_SUFFIX")
+    if suffix is not None:
+        return suffix
+    
+    suffix_file = "../output/current_run_suffix.txt"
+    if os.path.exists(suffix_file):
+        try:
+            with open(suffix_file, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+            
+    if is_inference:
+        os.makedirs("../output", exist_ok=True)
+        i = 1
+        while True:
+            suffix = f"-{i}"
+            found = False
+            if os.path.exists("../output"):
+                for root, dirs, files in os.walk("../output"):
+                    for d in dirs:
+                        if d.endswith(suffix):
+                            found = True
+                            break
+                    if found:
+                        break
+            if not found:
+                break
+            i += 1
+        try:
+            with open(suffix_file, "w") as f:
+                f.write(suffix)
+        except Exception:
+            pass
+        return suffix
+        
+    i = 1
+    latest_suffix = ""
+    while True:
+        suffix = f"-{i}"
+        found = False
+        if os.path.exists("../output"):
+            for root, dirs, files in os.walk("../output"):
+                for d in dirs:
+                    if d.endswith(suffix):
+                        found = True
+                        break
+                if found:
+                    break
+        if found:
+            latest_suffix = suffix
+            i += 1
+        else:
+            break
+    return latest_suffix
+
 def evaluate_cross_models(dataset_name, output_dir, models=["alpaca-7b", "Llama-2-7b-chat-hf", "Mistral-7B-Instruct-v0.2"]):
     if isinstance(models, str):
         models = [models]
@@ -25,8 +82,9 @@ def evaluate_cross_models(dataset_name, output_dir, models=["alpaca-7b", "Llama-
 
     results = defaultdict(dict)
 
+    suffix = get_run_suffix(is_inference=False)
     for model_name in models:
-        model_output_dir = f"{output_dir}/{model_name}"
+        model_output_dir = f"{output_dir}/{model_name}{suffix}"
         if not os.path.exists(model_output_dir):
             continue
         try:
@@ -74,7 +132,7 @@ def to_excel(results, save_path, sort_order):
 
 if __name__ == "__main__":
     datasets = ["date", "knownunknowns", "logicalfallacy", "threeobjects", "csqa", "strategyqa", "sports", "aqua", "gsm8k"]
-    models = ["alpaca-7b", "llama-2-7b-chat", "Mistral-7B-Instruct-v0.2"]
+    models = ["alpaca-7b", "Llama-2-7b-chat-hf", "Mistral-7B-Instruct-v0.2"]
     sort_order = ["vanilla (w/o CoT)", "vanilla (w/ CoT)", "ERR (w/o CoT)", "ERR (w/ CoT)"]
 
     task2datasets = {
@@ -85,6 +143,7 @@ if __name__ == "__main__":
     }
 
     # Small models
+    suffix = get_run_suffix(is_inference=False)
     small_model_results = {}
     for dataset in datasets:
         dataset_obj = get_dataset(dataset)
@@ -94,19 +153,19 @@ if __name__ == "__main__":
         results, save_dir = evaluate_cross_models(dataset, None, models=models)
         if results:
             small_model_results[dataset] = results
-            plot_cross_models(results, save_path=f"{save_dir}/{dataset}.png", title=dataset, sort_order=sort_order)
+            plot_cross_models(results, save_path=f"{save_dir}/{dataset}{suffix}.png", title=dataset, sort_order=sort_order)
     if small_model_results:
-        to_excel(small_model_results, "small_models.xlsx", sort_order)
+        to_excel(small_model_results, f"small_models{suffix}.xlsx", sort_order)
 
     # GPT-3.5
     model = "gpt-3.5-turbo-0125"
 
-    if os.path.exists(f"../output/{model}") or any(os.path.exists(f"../output/{cat}") for cat in task2datasets.keys()):
+    if os.path.exists(f"../output/{model}{suffix}") or any(os.path.exists(f"../output/{cat}") for cat in task2datasets.keys()):
         gpt_results = {}
         for category, datasets in task2datasets.items():
             results, save_dir = evaluate_cross_datasets(model, category)
             if results:
                 gpt_results[category] = results
-                plot_cross_datasets(results, model, category, save_path=f"{save_dir}/{model}.png", sort_order=sort_order)
+                plot_cross_datasets(results, model, category, save_path=f"{save_dir}/{model}{suffix}.png", sort_order=sort_order)
         if gpt_results:
-            to_excel(gpt_results, "gpt.xlsx", sort_order)
+            to_excel(gpt_results, f"gpt{suffix}.xlsx", sort_order)

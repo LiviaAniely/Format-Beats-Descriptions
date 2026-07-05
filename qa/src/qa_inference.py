@@ -14,6 +14,63 @@ os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 # Replace with the path to the file containing random nouns
 PATH_TO_RAND_NOUNS = "./noun/noun_65536.txt"
 
+def get_run_suffix(is_inference=False):
+    suffix = os.environ.get("RUN_SUFFIX")
+    if suffix is not None:
+        return suffix
+    
+    suffix_file = "../output/current_run_suffix.txt"
+    if os.path.exists(suffix_file):
+        try:
+            with open(suffix_file, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+            
+    if is_inference:
+        os.makedirs("../output", exist_ok=True)
+        i = 1
+        while True:
+            suffix = f"-{i}"
+            found = False
+            if os.path.exists("../output"):
+                for root, dirs, files in os.walk("../output"):
+                    for d in dirs:
+                        if d.endswith(suffix):
+                            found = True
+                            break
+                    if found:
+                        break
+            if not found:
+                break
+            i += 1
+        try:
+            with open(suffix_file, "w") as f:
+                f.write(suffix)
+        except Exception:
+            pass
+        return suffix
+        
+    i = 1
+    latest_suffix = ""
+    while True:
+        suffix = f"-{i}"
+        found = False
+        if os.path.exists("../output"):
+            for root, dirs, files in os.walk("../output"):
+                for d in dirs:
+                    if d.endswith(suffix):
+                        found = True
+                        break
+                if found:
+                    break
+        if found:
+            latest_suffix = suffix
+            i += 1
+        else:
+            break
+    return latest_suffix
+
 def main(
         dataset_name, 
         model_name_or_path="wxjiao/alpaca-7b", 
@@ -38,7 +95,8 @@ def main(
     dataset: ReasoningData = get_dataset(dataset_name, **kwargs)
     output_dir = dataset.data_dir.replace("data", "output")
     model_name = model_name_or_path.split("/")[-1]
-    output_dir = f"{output_dir}/{model_name}"
+    suffix = get_run_suffix(is_inference=True)
+    output_dir = f"{output_dir}/{model_name}{suffix}"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
